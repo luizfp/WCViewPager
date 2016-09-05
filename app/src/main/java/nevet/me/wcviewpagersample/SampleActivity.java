@@ -12,6 +12,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
@@ -20,10 +21,13 @@ import java.util.ArrayList;
 import java.util.Random;
 
 
-public class SampleActivity extends AppCompatActivity {
+public class SampleActivity extends AppCompatActivity implements
+        ImageViewPagerAdapter.OnClickListener {
 
     private ViewPager viewPager;
     private TabLayout tabs;
+    private IAdapter mAdapter;
+    private int mTotalEnable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,32 +35,32 @@ public class SampleActivity extends AppCompatActivity {
         setContentView(R.layout.activity_sample);
 
         viewPager = (ViewPager) findViewById(R.id.viewpager);
+        viewPager.setOffscreenPageLimit(4);
 
         // demo tab selection without scrolling
         tabs = (TabLayout) findViewById(R.id.tablayout);
-        tabs.setOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
-            @Override
-            public void onTabSelected(TabLayout.Tab tab) {
-                viewPager.setCurrentItem(tab.getPosition(), false);
-            }
+//        tabs.setOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+//            @Override
+//            public void onTabSelected(TabLayout.Tab tab) {
+//                viewPager.setCurrentItem(tab.getPosition(), false);
+//            }
+//
+//            @Override
+//            public void onTabUnselected(TabLayout.Tab tab) {
+//
+//            }
+//
+//            @Override
+//            public void onTabReselected(TabLayout.Tab tab) {
+//
+//            }
+//        });
 
-            @Override
-            public void onTabUnselected(TabLayout.Tab tab) {
-
-            }
-
-            @Override
-            public void onTabReselected(TabLayout.Tab tab) {
-
-            }
-        });
-
-        initTextViewsAdapter();
+        initImageViewsAdapter();
 
         // Create global configuration and initialize ImageLoader with this config
         ImageLoaderConfiguration config = new ImageLoaderConfiguration.Builder(this).build();
         ImageLoader.getInstance().init(config);
-
     }
 
     @Override
@@ -79,8 +83,10 @@ public class SampleActivity extends AppCompatActivity {
             return true;
         } else if (id == R.id.action_imageviews) {
             initImageViewsAdapter();
+            return true;
         } else if (id == R.id.action_imageviews_async) {
             initAsyncImageViewsAdapter();
+            return true;
         }
 
         return super.onOptionsItemSelected(item);
@@ -88,30 +94,31 @@ public class SampleActivity extends AppCompatActivity {
 
     private void initImageViewsAdapter() {
         ArrayList<Integer> resArrayList = new ArrayList<Integer>();
-        resArrayList.add(R.drawable.a100);
-        resArrayList.add(R.drawable.a200);
-        resArrayList.add(R.drawable.a300);
-        resArrayList.add(R.drawable.a400);
-        resArrayList.add(R.drawable.a200);
-        resArrayList.add(R.drawable.a300);
-        resArrayList.add(R.drawable.a100);
+        resArrayList.add(R.mipmap.ic_launcher);
+        resArrayList.add(R.mipmap.ic_launcher);
+        resArrayList.add(R.mipmap.ic_launcher);
+        resArrayList.add(R.mipmap.ic_launcher);
+        resArrayList.add(R.mipmap.ic_launcher);
+        resArrayList.add(R.mipmap.ic_launcher);
+        resArrayList.add(R.mipmap.ic_launcher);
 
-        ImageViewPagerAdapter adapter = new ImageViewPagerAdapter(resArrayList);
+        ImageViewPagerAdapter adapter = new ImageViewPagerAdapter(resArrayList, this);
         viewPager.setAdapter(adapter);
-        tabs.setupWithViewPager(viewPager);
+        mAdapter = adapter;
+//        tabs.setupWithViewPager(viewPager);
     }
 
     private void initAsyncImageViewsAdapter() {
-        ArrayList<String> resArrayList = new ArrayList<>();
-        resArrayList.add("http://dummyimage.com/500x400/000/fff");
-        resArrayList.add("http://dummyimage.com/500x300/040/fff");
-        resArrayList.add("http://dummyimage.com/500x200/006/fff");
-        resArrayList.add("http://dummyimage.com/500x400/700/fff");
-        resArrayList.add("http://dummyimage.com/500x100/006/fff");
+        ArrayList<String> asyncImagesArray = new ArrayList<>();
+        asyncImagesArray.add("http://dummyimage.com/500x400/000/fff");
+        asyncImagesArray.add("http://dummyimage.com/500x300/040/fff");
+        asyncImagesArray.add("http://dummyimage.com/500x200/006/fff");
+        asyncImagesArray.add("http://dummyimage.com/500x400/700/fff");
+        asyncImagesArray.add("http://dummyimage.com/500x100/006/fff");
 
-        AsyncImageViewPagerAdapter adapter = new AsyncImageViewPagerAdapter(resArrayList);
+        AsyncImageViewPagerAdapter adapter = new AsyncImageViewPagerAdapter(asyncImagesArray);
         viewPager.setAdapter(adapter);
-        tabs.setupWithViewPager(viewPager);
+//        tabs.setupWithViewPager(viewPager);
     }
 
     private void initTextViewsAdapter() {
@@ -124,7 +131,16 @@ public class SampleActivity extends AppCompatActivity {
 
         TextViewPagerAdapter adapter = new TextViewPagerAdapter(stringArrayList);
         viewPager.setAdapter(adapter);
-        tabs.setupWithViewPager(viewPager);
+//        tabs.setupWithViewPager(viewPager);
+    }
+
+    @Override
+    public void onClickAdapterItem() {
+        if (mAdapter != null && mAdapter.enableNext()) {
+            mTotalEnable++;
+            viewPager.setCurrentItem(mTotalEnable, true);
+            Toast.makeText(this, "Swipe next enabled", Toast.LENGTH_SHORT).show();
+        }
     }
 
 
@@ -172,52 +188,11 @@ public class SampleActivity extends AppCompatActivity {
         }
     }
 
-    public class ImageViewPagerAdapter extends PagerAdapter {
-
-        private final ArrayList<Integer> images;
-
-        public ImageViewPagerAdapter(ArrayList<Integer> imageResourceIds) {
-            super();
-            this.images = imageResourceIds;
-        }
-
-        @Override
-        public int getCount() {
-            return images.size();
-        }
-
-        @Override
-        public boolean isViewFromObject(View view, Object object) {
-            return view.equals(object);
-        }
-
-        @Override
-        public Object instantiateItem(ViewGroup container, int position) {
-            ImageView view = new ImageView(container.getContext());
-            view.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            view.setImageResource(images.get(position));
-            container.addView(view);
-
-            return view;
-        }
-
-        @Override
-        public void destroyItem(ViewGroup container, int position, Object object) {
-            container.removeView((View) object);
-        }
-
-        @Override
-        public CharSequence getPageTitle(int position) {
-            return "View" + position;
-        }
-    }
-
     public class AsyncImageViewPagerAdapter extends PagerAdapter {
 
         private final ArrayList<String> images;
 
         public AsyncImageViewPagerAdapter(ArrayList<String> imageUrls) {
-            super();
             this.images = imageUrls;
         }
 
@@ -247,7 +222,7 @@ public class SampleActivity extends AppCompatActivity {
 
         @Override
         public CharSequence getPageTitle(int position) {
-            return "View" + position;
+            return "View " + position;
         }
     }
 }
